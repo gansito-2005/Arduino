@@ -1,0 +1,100 @@
+// =======================
+// DEFINICION DE PINES
+// =======================
+
+// Potenciometro que controla el color (Hue)
+const int huePotPin = A1;
+
+// Potenciometro que controla la intensidad/brillo (Value)
+const int valPotPin = A2;
+
+// Pines PWM para cada color del LED RGB
+const int redPin   = 9;   // Canal rojo
+const int greenPin = 10;  // Canal verde
+const int bluePin  = 11;  // Canal azul
+
+// =======================
+// CONFIGURACION INICIAL
+// =======================
+void setup() {
+  // Configurar los pines RGB como salidas
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+}
+
+// =======================
+// CICLO PRINCIPAL
+// =======================
+void loop() {
+
+  // Leer los valores analogicos de los potenciometros (0 a 1023)
+  int hueValue = analogRead(huePotPin);
+  int valValue = analogRead(valPotPin);
+
+  // Convertir el valor del potenciometro de color a grados (0 a 360)
+  float hue = map(hueValue, 0, 1023, 0, 360);
+
+  // Convertir el valor del potenciometro de brillo a rango 0.0 a 1.0
+  float value = map(valValue, 0, 1023, 0, 100) / 100.0;
+
+  // Variables donde se almacenaran los valores RGB finales
+  byte r, g, b;
+
+  // Convertir Hue y Value a valores RGB
+  hueToRGB(hue, value, r, g, b);
+
+  // =======================
+  // LED RGB ANODO COMUN
+  // =======================
+  // En un LED de anodo comun:
+  //  - 0 PWM  = maxima intensidad
+  //  - 255 PWM = apagado
+  // Por eso se invierte el valor con (255 - valor)
+
+  analogWrite(redPin,   255 - r);
+  analogWrite(greenPin, 255 - g);
+  analogWrite(bluePin,  255 - b);
+}
+
+// =======================
+// FUNCION HUE A RGB
+// =======================
+// Convierte un valor Hue (0-360) y brillo (0.0-1.0)
+// a valores RGB (0-255)
+// Saturacion fija en 1.0
+void hueToRGB(float hue, float v, byte &r, byte &g, byte &b) {
+
+  float s = 1.0; // Saturacion fija
+
+  // Chroma
+  float c = v * s;
+
+  // Segundo componente intermedio
+  float x = c * (1 - abs(fmod(hue / 60.0, 2) - 1));
+
+  // Ajuste de brillo
+  float m = v - c;
+
+  float r1, g1, b1;
+
+  // Determinar el sector del circulo cromatico
+  if (hue < 60) {
+    r1 = c; g1 = x; b1 = 0;
+  } else if (hue < 120) {
+    r1 = x; g1 = c; b1 = 0;
+  } else if (hue < 180) {
+    r1 = 0; g1 = c; b1 = x;
+  } else if (hue < 240) {
+    r1 = 0; g1 = x; b1 = c;
+  } else if (hue < 300) {
+    r1 = x; g1 = 0; b1 = c;
+  } else {
+    r1 = c; g1 = 0; b1 = x;
+  }
+
+  // Convertir de 0.0-1.0 a 0-255
+  r = (r1 + m) * 255;
+  g = (g1 + m) * 255;
+  b = (b1 + m) * 255;
+}
