@@ -1,0 +1,25 @@
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+// Pin del DS18B20
+const int pinDatosDQ = 4;
+
+// Objetos del sensor
+OneWire oneWireObjeto(pinDatosDQ);
+DallasTemperature sensorDS18B20(&oneWireObjeto);
+
+void setup() {
+  Serial.begin(9600);
+  sensorDS18B20.begin();
+}
+
+void loop() {
+  sensorDS18B20.requestTemperatures();          // Solicita medicion
+  float tempActual = sensorDS18B20.getTempCByIndex(0); // Lee temperatura
+
+  Serial.print("Temperatura actual: ");
+  Serial.print(tempActual);
+  Serial.println(" C");
+
+  delay(1000); // 1 segundo
+}
