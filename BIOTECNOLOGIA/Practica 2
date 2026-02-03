@@ -2,7 +2,7 @@
 #include <DallasTemperature.h>
 
 // Pin del DS18B20
-const int pinDatosDQ = 4;
+const int pinDatosDQ = 2;
 
 // Objetos del sensor
 OneWire oneWireObjeto(pinDatosDQ);
