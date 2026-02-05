@@ -1,83 +1,70 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-#define ONE_WIRE_BUS 2
+const int pinDatosDQ = 4;     // DS18B20
+const int potenciometroTE = A1;
 
-// LED RGB (catodo comun)
-#define LED_R 9
-#define LED_G 10
-#define LED_B 11
+// LED RGB (anodo comun)
+const int LedR = 7;
+const int LedG = 6;
+const int LedB = 5;
 
-// Potenciometro
-#define POT A0
+OneWire oneWireObjeto(pinDatosDQ);
+DallasTemperature sensorDS18B20(&oneWireObjeto);
 
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature sensors(&oneWire);
-
-float tempActual;
-float tempDeseada;
+float tempActual = 0.0;
+float tempDeseada = 0.0;
 
 void setup() {
   Serial.begin(9600);
-  sensors.begin();
+  sensorDS18B20.begin();
 
-  pinMode(LED_R, OUTPUT);
-  pinMode(LED_G, OUTPUT);
-  pinMode(LED_B, OUTPUT);
+  pinMode(LedR, OUTPUT);
+  pinMode(LedG, OUTPUT);
+  pinMode(LedB, OUTPUT);
 
-  apagarLED();
+  // Apagar LED al inicio
+  analogWrite(LedR, 255);
+  analogWrite(LedG, 255);
+  analogWrite(LedB, 255);
 }
 
 void loop() {
-  // Leer sensor DS18B20
-  sensors.requestTemperatures();
-  tempActual = sensors.getTempCByIndex(0);
 
-  // Leer potenciometro y mapear a rango de temperatura
-  int potValue = analogRead(POT);
-  tempDeseada = map(potValue, 0, 1023, 10, 40);
+  // Leer temperatura actual
+  sensorDS18B20.requestTemperatures();
+  tempActual = sensorDS18B20.getTempCByIndex(0);
 
-  // Mostrar datos en monitor serial
-  Serial.print("Temperatura deseada: ");
+  // Leer potenciometro y mapear temperatura deseada
+  int lecturaPOT = analogRead(potenciometroTE);
+  tempDeseada = map(lecturaPOT, 0, 1023, 20, 53);
+
+  // Mostrar en monitor serial
+  Serial.print("TE: ");
   Serial.print(tempDeseada);
-  Serial.print(" C | ");
-
-  Serial.print("Temperatura actual: ");
+  Serial.print(" C | TA: ");
   Serial.print(tempActual);
   Serial.println(" C");
 
-  // Comparacion con margen +-1 grado
+  // Logica de comparacion +-1 grado
   if (tempActual > tempDeseada + 1) {
-    rojo();   // Caliente
+    // Caliente -> Rojo
+    analogWrite(LedR, 0);
+    analogWrite(LedG, 255);
+    analogWrite(LedB, 255);
   }
   else if (tempActual < tempDeseada - 1) {
-    azul();   // Frio
+    // Frio -> Azul
+    analogWrite(LedR, 255);
+    analogWrite(LedG, 255);
+    analogWrite(LedB, 0);
   }
   else {
-    verde();  // Rango correcto
+    // Rango correcto -> Verde
+    analogWrite(LedR, 255);
+    analogWrite(LedG, 0);
+    analogWrite(LedB, 255);
   }
 
   delay(1000);
-}
-
-// ---- Funciones LED ----
-void apagarLED() {
-  digitalWrite(LED_R, LOW);
-  digitalWrite(LED_G, LOW);
-  digitalWrite(LED_B, LOW);
-}
-
-void rojo() {
-  apagarLED();
-  digitalWrite(LED_R, HIGH);
-}
-
-void verde() {
-  apagarLED();
-  digitalWrite(LED_G, HIGH);
-}
-
-void azul() {
-  apagarLED();
-  digitalWrite(LED_B, HIGH);
 }
