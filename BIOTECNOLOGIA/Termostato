@@ -1,0 +1,83 @@
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+#define ONE_WIRE_BUS 2
+
+// LED RGB (catodo comun)
+#define LED_R 9
+#define LED_G 10
+#define LED_B 11
+
+// Potenciometro
+#define POT A0
+
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
+float tempActual;
+float tempDeseada;
+
+void setup() {
+  Serial.begin(9600);
+  sensors.begin();
+
+  pinMode(LED_R, OUTPUT);
+  pinMode(LED_G, OUTPUT);
+  pinMode(LED_B, OUTPUT);
+
+  apagarLED();
+}
+
+void loop() {
+  // Leer sensor DS18B20
+  sensors.requestTemperatures();
+  tempActual = sensors.getTempCByIndex(0);
+
+  // Leer potenciometro y mapear a rango de temperatura
+  int potValue = analogRead(POT);
+  tempDeseada = map(potValue, 0, 1023, 10, 40);
+
+  // Mostrar datos en monitor serial
+  Serial.print("Temperatura deseada: ");
+  Serial.print(tempDeseada);
+  Serial.print(" C | ");
+
+  Serial.print("Temperatura actual: ");
+  Serial.print(tempActual);
+  Serial.println(" C");
+
+  // Comparacion con margen +-1 grado
+  if (tempActual > tempDeseada + 1) {
+    rojo();   // Caliente
+  }
+  else if (tempActual < tempDeseada - 1) {
+    azul();   // Frio
+  }
+  else {
+    verde();  // Rango correcto
+  }
+
+  delay(1000);
+}
+
+// ---- Funciones LED ----
+void apagarLED() {
+  digitalWrite(LED_R, LOW);
+  digitalWrite(LED_G, LOW);
+  digitalWrite(LED_B, LOW);
+}
+
+void rojo() {
+  apagarLED();
+  digitalWrite(LED_R, HIGH);
+}
+
+void verde() {
+  apagarLED();
+  digitalWrite(LED_G, HIGH);
+}
+
+void azul() {
+  apagarLED();
+  digitalWrite(LED_B, HIGH);
+}
