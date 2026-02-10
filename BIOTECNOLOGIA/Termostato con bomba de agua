@@ -1,0 +1,82 @@
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+const int pinDatosDQ = 4;     // DS18B20
+const int potenciometroTE = A1;
+
+// LED RGB (anodo comun)
+const int LedR = 7;
+const int LedG = 6;
+const int LedB = 5;
+
+// MX1508
+const int IN1 = 8;           // Solo una entrada del puente H
+
+OneWire oneWireObjeto(pinDatosDQ);
+DallasTemperature sensorDS18B20(&oneWireObjeto);
+
+float tempActual = 0.0;
+float tempDeseada = 0.0;
+
+void setup() {
+  Serial.begin(9600);
+  sensorDS18B20.begin();
+
+  pinMode(LedR, OUTPUT);
+  pinMode(LedG, OUTPUT);
+  pinMode(LedB, OUTPUT);
+
+  pinMode(IN1, OUTPUT);
+  digitalWrite(IN1, LOW);    // Puente H apagado al inicio
+
+  // Apagar LED al inicio
+  analogWrite(LedR, 255);
+  analogWrite(LedG, 255);
+  analogWrite(LedB, 255);
+}
+
+void loop() {
+
+  // Leer temperatura actual
+  sensorDS18B20.requestTemperatures();
+  tempActual = sensorDS18B20.getTempCByIndex(0);
+
+  // Leer potenciometro y mapear temperatura deseada
+  int lecturaPOT = analogRead(potenciometroTE);
+  tempDeseada = map(lecturaPOT, 0, 1023, 20, 53);
+
+  // Mostrar en monitor serial
+  Serial.print("TE: ");
+  Serial.print(tempDeseada);
+  Serial.print(" C | TA: ");
+  Serial.print(tempActual);
+  Serial.println(" C");
+
+  // Logica de comparacion +-1 grado
+  if (tempActual > tempDeseada + 1) {
+    // Caliente -> Rojo
+    analogWrite(LedR, 0);
+    analogWrite(LedG, 255);
+    analogWrite(LedB, 255);
+
+    digitalWrite(IN1, LOW);   // Puente H apagado
+  }
+  else if (tempActual < tempDeseada - 1) {
+    // Frio -> Azul
+    analogWrite(LedR, 255);
+    analogWrite(LedG, 255);
+    analogWrite(LedB, 0);
+
+    digitalWrite(IN1, HIGH);  // Activar MX1508 en un solo sentido
+  }
+  else {
+    // Rango correcto -> Verde
+    analogWrite(LedR, 255);
+    analogWrite(LedG, 0);
+    analogWrite(LedB, 255);
+
+    digitalWrite(IN1, LOW);   // Puente H apagado
+  }
+
+  delay(1000);
+}
